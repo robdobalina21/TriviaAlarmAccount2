@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in — TriviaAlarm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #14231F;
+    --surface: #1C332C;
+    --surface-raised: #233D34;
+    --brass: #C9A227;
+    --brass-bright: #E0BC4A;
+    --alarm-red: #C1443D;
+    --chalk: #EDE6D6;
+    --muted: #8FA79C;
+    --line: rgba(237, 230, 214, 0.12);
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Inter', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-deep);
+    color: var(--chalk);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 40px 32px;
+  }
+  .logo {
+    display: block;
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--chalk);
+    text-decoration: none;
+    margin-bottom: 28px;
+  }
+  .logo span { color: var(--brass-bright); }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.5rem;
+    text-align: center;
+    margin: 0 0 28px;
+  }
+  form { display: grid; gap: 14px; }
+  label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  input {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.98rem;
+    color: var(--chalk);
+    background: var(--surface-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  button {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.98rem;
+    color: var(--bg-deep);
+    background: var(--brass-bright);
+    border: none;
+    padding: 13px 0;
+    border-radius: 100px;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .error {
+    color: var(--alarm-red);
+    font-size: 0.85rem;
+    min-height: 18px;
+    text-align: center;
+  }
+  .switch {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-top: 18px;
+  }
+  .switch a { color: var(--brass-bright); text-decoration: none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <a href="/index.html" class="logo">Trivia<span>Alarm</span></a>
+    <h1>Log in</h1>
+    <form id="loginForm">
+      <div>
+        <label for="email">Email</label>
+        <input type="email" id="email" required>
+      </div>
+      <div>
+        <label for="password">Password</label>
+        <input type="password" id="password" required>
+      </div>
+      <p class="error" id="loginError"></p>
+      <button type="submit">Log in</button>
+    </form>
+    <p class="switch">Don't have an account? <a href="/index.html#signup">Create one</a></p>
+  </div>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const errorEl = document.getElementById('loginError');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      errorEl.textContent = '';
+      const submitBtn = form.querySelector('button');
+      submitBtn.disabled = true;
+
+      fetch('/.netlify/functions/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value
+        })
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Something went wrong');
+          window.location.href = '/dashboard.html';
+        })
+        .catch((err) => {
+          submitBtn.disabled = false;
+          errorEl.textContent = err.message || 'Something went wrong.';
+        });
+    });
+  </script>
+</body>
+</html>
