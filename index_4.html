@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TriviaAlarm — Wake up. Or answer for it.</title>
+<meta name="description" content="TriviaAlarm won't shut off until you get the answer right. Set it in ten seconds, and let your brain do the rest.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #14231F;
+    --surface: #1C332C;
+    --surface-raised: #233D34;
+    --brass: #C9A227;
+    --brass-bright: #E0BC4A;
+    --alarm-red: #C1443D;
+    --chalk: #EDE6D6;
+    --muted: #8FA79C;
+    --line: rgba(237, 230, 214, 0.12);
+    --font-display: 'Fraunces', serif;
+    --font-digit: 'Space Mono', monospace;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg-deep);
+    color: var(--chalk);
+    font-family: var(--font-body);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible {
+    outline: 2px solid var(--brass-bright);
+    outline-offset: 3px;
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---------- Nav ---------- */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(20, 35, 31, 0.9);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+    color: var(--chalk);
+    text-decoration: none;
+  }
+  .logo span { color: var(--brass-bright); }
+  .nav-cta {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--bg-deep);
+    background: var(--brass-bright);
+    padding: 10px 18px;
+    border-radius: 100px;
+    text-decoration: none;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .nav-cta:hover { background: var(--chalk); transform: translateY(-1px); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 88px 0 64px;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .eyebrow {
+    font-family: var(--font-digit);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin: 0 0 18px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(2.4rem, 5vw, 3.6rem);
+    line-height: 1.05;
+    margin: 0 0 22px;
+    letter-spacing: -0.01em;
+  }
+  h1 em {
+    font-style: italic;
+    color: var(--brass-bright);
+  }
+  .hero p.lede {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 46ch;
+    margin: 0 0 32px;
+  }
+  .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+  .btn-primary {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.98rem;
+    color: var(--bg-deep);
+    background: var(--brass-bright);
+    border: none;
+    padding: 14px 26px;
+    border-radius: 100px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+    display: inline-block;
+  }
+  .btn-primary:hover { background: var(--chalk); transform: translateY(-1px); }
+  .btn-ghost {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.98rem;
+    color: var(--chalk);
+    background: transparent;
+    border: 1px solid var(--line);
+    padding: 14px 26px;
+    border-radius: 100px;
+    cursor: pointer;
+  }
+  .btn-ghost:hover { border-color: var(--brass); }
+
+  /* ---------- Alarm demo (signature element) ---------- */
+  .demo {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .demo::before {
+    content: "";
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(201,162,39,0.18), transparent 70%);
+  }
+  .demo-label {
+    font-family: var(--font-digit);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 16px;
+  }
+  .clock-face {
+    font-family: var(--font-digit);
+    font-weight: 700;
+    font-size: clamp(3rem, 8vw, 4.2rem);
+    color: var(--chalk);
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .clock-face .colon { color: var(--brass); animation: blink 2s steps(1) infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .clock-face .colon { animation: none; }
+  }
+  @keyframes blink { 50% { opacity: 0.25; } }
+  .clock-sub {
+    font-family: var(--font-digit);
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 26px;
+  }
+  .demo-buttons { display: flex; gap: 12px; margin-bottom: 4px; }
+  .snooze-btn {
+    flex: 1;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 14px 0;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--surface-raised);
+    color: var(--chalk);
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .snooze-btn:hover { background: #2b4a40; }
+  .snooze-btn:active { transform: scale(0.98); }
+
+  .trivia-card {
+    margin-top: 18px;
+    background: var(--surface-raised);
+    border: 1px solid rgba(201,162,39,0.35);
+    border-radius: 14px;
+    padding: 20px;
+    display: none;
+  }
+  .trivia-card.open { display: block; animation: rise 0.25s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .trivia-progress {
+    font-family: var(--font-digit);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin: 0 0 10px;
+  }
+  .trivia-q {
+    font-size: 0.98rem;
+    font-weight: 500;
+    margin: 0 0 14px;
+  }
+  .trivia-options { display: grid; gap: 8px; }
+  .trivia-opt {
+    text-align: left;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    padding: 11px 14px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--chalk);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .trivia-opt:hover { border-color: var(--brass); }
+  .trivia-opt.correct { border-color: #6FA97A; background: rgba(111,169,122,0.15); }
+  .trivia-opt.wrong { border-color: var(--alarm-red); background: rgba(193,68,61,0.15); animation: shake 0.3s; }
+  @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  .demo-status {
+    margin-top: 14px;
+    font-family: var(--font-digit);
+    font-size: 0.8rem;
+    color: var(--muted);
+    min-height: 18px;
+  }
+  .demo-status.silenced { color: #6FA97A; }
+
+  /* ---------- Sections ---------- */
+  section { padding: 72px 0; }
+  .section-head { max-width: 56ch; margin: 0 0 44px; }
+  .section-head .eyebrow { margin-bottom: 12px; }
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.8rem, 3.4vw, 2.4rem);
+    margin: 0 0 14px;
+    letter-spacing: -0.01em;
+  }
+  .section-head p { color: var(--muted); font-size: 1.02rem; margin: 0; }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .feature-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: rgba(201,162,39,0.14);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px;
+    color: var(--brass-bright);
+  }
+  .feature-card h3 {
+    font-family: var(--font-body);
+    font-size: 1.08rem;
+    font-weight: 600;
+    margin: 0 0 10px;
+  }
+  .feature-card p {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: 0;
+  }
+
+  .how {
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    counter-reset: step;
+  }
+  .step {
+    position: relative;
+    padding-left: 0;
+  }
+  .step-num {
+    font-family: var(--font-digit);
+    font-size: 0.85rem;
+    color: var(--brass);
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .step h3 {
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  .step p { color: var(--muted); font-size: 0.95rem; margin: 0; }
+
+  /* ---------- Signup ---------- */
+  .signup {
+    text-align: center;
+  }
+  .signup-box {
+    max-width: 460px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 40px 32px;
+  }
+  .signup h2 { margin-bottom: 10px; }
+  .signup > .wrap > p.lede {
+    color: var(--muted);
+    max-width: 46ch;
+    margin: 0 auto 36px;
+  }
+  form.interest-form { display: grid; gap: 12px; text-align: left; }
+  .field label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-family: var(--font-digit);
+    letter-spacing: 0.04em;
+  }
+  .field input {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.98rem;
+    color: var(--chalk);
+    background: var(--surface-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .field input::placeholder { color: #5f7a70; }
+  .honeypot { position: absolute; left: -9999px; }
+  form.interest-form .btn-primary { margin-top: 6px; width: 100%; border: none; }
+  .form-note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 14px;
+  }
+  .form-success {
+    display: none;
+    text-align: center;
+    padding: 20px 0;
+  }
+  .form-success.show { display: block; }
+  .form-success h3 {
+    font-family: var(--font-display);
+    color: var(--brass-bright);
+    margin: 0 0 8px;
+  }
+  .form-success p { color: var(--muted); margin: 0; }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 32px 0;
+    text-align: center;
+  }
+  footer p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin: 0;
+  }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; padding-top: 56px; }
+    .features { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a href="#top" class="logo">Trivia<span>Alarm</span></a>
+    <div style="display:flex; align-items:center; gap:16px;">
+      <a href="/login.html" style="color: var(--muted); text-decoration:none; font-size:0.9rem; font-weight:500;">Log in</a>
+      <a href="#signup" class="nav-cta">Create account</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero wrap">
+    <div>
+      <p class="eyebrow">Coming soon</p>
+      <h1>Wake up.<br>Or <em>answer</em> for it.</h1>
+      <p class="lede">TriviaAlarm shuts off with exactly one thing: a right answer. Set it in ten seconds — your brain handles the rest.</p>
+      <div class="hero-actions">
+        <a href="#signup" class="btn-primary">Create your account</a>
+        <a href="#demo" class="btn-ghost">Try the demo</a>
+      </div>
+    </div>
+
+    <div class="demo" id="demo">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <p class="demo-label" style="margin:0;">Live demo — this is the whole app</p>
+        <button type="button" id="muteToggle" aria-pressed="false" style="background:none; border:1px solid var(--line); color:var(--muted); border-radius:100px; padding:5px 12px; font-family:var(--font-digit); font-size:0.68rem; letter-spacing:0.06em; cursor:pointer; white-space:nowrap;">🔊 Sound on</button>
+      </div>
+      <div class="clock-face" aria-hidden="true">7<span class="colon">:</span>00 <span style="font-size:0.4em; color: var(--muted); align-self:flex-start;">AM</span></div>
+      <p class="clock-sub">Alarm ringing. Snooze is disabled.</p>
+      <div class="demo-buttons">
+        <button class="snooze-btn" id="snoozeBtn" type="button">Try to snooze</button>
+      </div>
+
+      <div class="trivia-card" id="triviaCard">
+        <p class="trivia-progress" id="triviaProgress">Question 1 of 3</p>
+        <p class="trivia-q" id="triviaQ">Nice try. Answer this first:</p>
+        <div class="trivia-options" id="triviaOptions"></div>
+      </div>
+      <p class="demo-status" id="demoStatus"></p>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="wrap" id="features">
+    <div class="section-head">
+      <p class="eyebrow">Why it works</p>
+      <h2>Simple to set. Impossible to sleep through.</h2>
+      <p>Most alarm apps add features. TriviaAlarm removes the one loophole that makes every alarm useless — the snooze button.</p>
+    </div>
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 3h6M5 5l1.5 1.5M19 5l-1.5 1.5"/></svg>
+        </div>
+        <h3>Ten-second setup</h3>
+        <p>Pick a time, pick a category, done. No accounts to configure, no settings maze — TriviaAlarm works the way an alarm clock should.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 3a6.5 6.5 0 0 0-1 12.9V19a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-3.1A6.5 6.5 0 0 0 14.5 3h-5Z"/><path d="M9 22h6"/></svg>
+        </div>
+        <h3>A real wake-up call</h3>
+        <p>Answering a question uses a different part of your brain than slapping a button. By the time you're right, you're actually awake.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <h3>Categories that fit your morning</h3>
+        <p>Geography before a trip, general knowledge on a Tuesday, or something brutal on days you know you'll be tempted to cheat.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">How it works</p>
+        <h2>Three steps, every night</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <p class="step-num">01</p>
+          <h3>Set your time</h3>
+          <p>Same as any alarm. Pick when you need to be up.</p>
+        </div>
+        <div class="step">
+          <p class="step-num">02</p>
+          <h3>Alarm rings</h3>
+          <p>It's loud, and the usual snooze button is gone.</p>
+        </div>
+        <div class="step">
+          <p class="step-num">03</p>
+          <h3>Answer to silence it</h3>
+          <p>Get the trivia question right, and the alarm stops. Not before.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIGNUP -->
+  <section class="signup" id="signup">
+    <div class="wrap">
+      <p class="eyebrow" style="text-align:center;">Create your account</p>
+      <h2>Set your first alarm</h2>
+      <p class="lede">Pick a wake-up time and a trivia category. TriviaAlarm remembers it every night — no re-setup, ever.</p>
+
+      <div class="signup-box">
+        <form class="interest-form" id="interestForm">
+          <p class="honeypot"><label>Don't fill this out: <input id="botField" name="botField" autocomplete="off" tabindex="-1" /></label></p>
+
+          <div class="field">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" placeholder="Your name" required>
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="you@email.com" required>
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="At least 8 characters" minlength="8" required>
+          </div>
+          <div class="field">
+            <label for="alarmTime">Wake-up time</label>
+            <input type="time" id="alarmTime" name="alarmTime" value="07:00" required>
+          </div>
+          <div class="field">
+            <label for="category">Trivia category</label>
+            <select id="category" name="category">
+              <option value="general">General knowledge</option>
+              <option value="geography">Geography</option>
+              <option value="science">Science</option>
+              <option value="history">History</option>
+              <option value="pop-culture">Pop culture</option>
+              <option value="surprise">Surprise me</option>
+            </select>
+          </div>
+          <button class="btn-primary" type="submit">Create account</button>
+          <p class="form-note" id="formNote">Already have an account? <a href="/login.html" style="color: var(--brass-bright);">Log in</a></p>
+        </form>
+
+        <div class="form-success" id="formSuccess">
+          <h3>You're all set.</h3>
+          <p>Your account and alarm settings are saved. Taking you to your dashboard…</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>&copy; 2026 TriviaAlarm. Not affiliated with your ability to sleep in.</p>
+  </div>
+</footer>
+
+<script>
+  // --- Live trivia snooze demo ---
+  const questions = [
+    // Easy
+    { q: "What's the largest planet in our solar system?", options: ["Saturn", "Jupiter", "Neptune"], correct: 1 },
+    { q: "Which ocean is the largest?", options: ["Atlantic", "Indian", "Pacific"], correct: 2 },
+    { q: "In what year did the first iPhone launch?", options: ["2005", "2007", "2009"], correct: 1 },
+    { q: "What's the capital of France?", options: ["Lyon", "Marseille", "Paris"], correct: 2 },
+    { q: "How many continents are there?", options: ["5", "7", "6"], correct: 1 },
+    { q: "What's the fastest land animal?", options: ["Lion", "Cheetah", "Gazelle"], correct: 1 },
+    { q: "How many bones does an adult human have?", options: ["186", "206", "226"], correct: 1 },
+    { q: "Who wrote \"Romeo and Juliet\"?", options: ["Dickens", "Hemingway", "Shakespeare"], correct: 2 },
+    { q: "What currency is used in Japan?", options: ["Won", "Yen", "Yuan"], correct: 1 },
+    { q: "What's the smallest prime number?", options: ["1", "2", "3"], correct: 1 },
+    { q: "At what temperature does water freeze (Celsius)?", options: ["0°", "10°", "-10°"], correct: 0 },
+    { q: "Who was the first person to walk on the moon?", options: ["Buzz Aldrin", "Yuri Gagarin", "Neil Armstrong"], correct: 2 },
+    { q: "What's the capital of Italy?", options: ["Milan", "Rome", "Venice"], correct: 1 },
+    { q: "How many strings does a standard violin have?", options: ["6", "5", "4"], correct: 2 },
+    { q: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Mercury"], correct: 1 },
+
+    // Medium
+    { q: "What's the capital of Mongolia?", options: ["Ulaanbaatar", "Astana", "Bishkek"], correct: 0 },
+    { q: "What's the chemical symbol for tungsten?", options: ["Tu", "W", "Wf"], correct: 1 },
+    { q: "Who wrote \"One Hundred Years of Solitude\"?", options: ["Jorge Luis Borges", "Pablo Neruda", "Gabriel García Márquez"], correct: 2 },
+    { q: "What's the smallest bone in the human body?", options: ["Malleus", "Incus", "Stapes"], correct: 2 },
+    { q: "What year did the Berlin Wall fall?", options: ["1987", "1989", "1991"], correct: 1 },
+    { q: "What's the longest river in the world?", options: ["Amazon", "Nile", "Yangtze"], correct: 1 },
+    { q: "Which element has the atomic number 79?", options: ["Silver", "Platinum", "Gold"], correct: 2 },
+    { q: "How many bones are in the human hand?", options: ["25", "27", "32"], correct: 1 },
+    { q: "Which country has the most time zones?", options: ["Russia", "USA", "France"], correct: 2 },
+    { q: "What's the deepest oceanic trench?", options: ["Puerto Rico Trench", "Mariana Trench", "Java Trench"], correct: 1 },
+    { q: "Which element is first on the periodic table?", options: ["Helium", "Hydrogen", "Lithium"], correct: 1 },
+    { q: "Who painted the Mona Lisa?", options: ["Michelangelo", "Raphael", "Leonardo da Vinci"], correct: 2 },
+    { q: "Which country gifted the Statue of Liberty to the US?", options: ["United Kingdom", "France", "Spain"], correct: 1 },
+    { q: "What's the largest desert in the world by area?", options: ["Sahara", "Gobi", "Antarctica"], correct: 2 },
+    { q: "What was Germany's currency before the Euro?", options: ["Franc", "Deutsche Mark", "Lira"], correct: 1 },
+    { q: "What year did World War II end?", options: ["1943", "1945", "1947"], correct: 1 },
+    { q: "Who is credited with inventing the telephone?", options: ["Thomas Edison", "Nikola Tesla", "Alexander Graham Bell"], correct: 2 },
+    { q: "What's the largest mammal on Earth?", options: ["African elephant", "Blue whale", "Giraffe"], correct: 1 },
+    { q: "What's the capital of Australia?", options: ["Sydney", "Melbourne", "Canberra"], correct: 2 },
+    { q: "Which planet has the most moons?", options: ["Jupiter", "Saturn", "Neptune"], correct: 1 },
+
+    // Hard
+    { q: "What's the only mammal capable of true flight?", options: ["Flying squirrel", "Sugar glider", "Bat"], correct: 2 },
+    { q: "Half-life is a measurement used to describe what?", options: ["Radioactive decay", "Chemical bonding", "Magnetic fields"], correct: 0 },
+    { q: "In which country is the ancient city of Petra located?", options: ["Egypt", "Syria", "Jordan"], correct: 2 },
+    { q: "Who wrote \"Crime and Punishment\"?", options: ["Leo Tolstoy", "Anton Chekhov", "Fyodor Dostoevsky"], correct: 2 },
+    { q: "What's the hardest naturally occurring substance on Earth?", options: ["Quartz", "Titanium", "Diamond"], correct: 2 },
+    { q: "Who is considered the first computer programmer?", options: ["Alan Turing", "Charles Babbage", "Ada Lovelace"], correct: 2 },
+    { q: "What's the capital of Kazakhstan?", options: ["Almaty", "Astana", "Bishkek"], correct: 1 },
+    { q: "What's the official currency of Brazil?", options: ["Peso", "Real", "Boliviano"], correct: 1 },
+    { q: "What's the chemical symbol for antimony?", options: ["An", "Ab", "Sb"], correct: 2 },
+    { q: "In what year was the Magna Carta signed?", options: ["1189", "1215", "1315"], correct: 1 },
+    { q: "Who composed \"The Four Seasons\"?", options: ["Johann Sebastian Bach", "Antonio Vivaldi", "Wolfgang Amadeus Mozart"], correct: 1 },
+    { q: "Which country has the only non-rectangular national flag?", options: ["Bhutan", "Switzerland", "Nepal"], correct: 2 },
+    { q: "What's the smallest country in the world by area?", options: ["Monaco", "San Marino", "Vatican City"], correct: 2 },
+    { q: "Who was the longest-reigning British monarch before Elizabeth II?", options: ["George III", "Henry VIII", "Queen Victoria"], correct: 2 },
+    { q: "How many moons does Mars have?", options: ["1", "2", "4"], correct: 1 }
+  ];
+
+  const ROUND_SIZE = 3;
+  const NEEDED_CORRECT = 2;
+  let roundQuestions = [];
+  let roundIndex = 0;
+  let roundCorrect = 0;
+
+  function pickRoundQuestions() {
+    const pool = [...questions];
+    const picked = [];
+    for (let i = 0; i < ROUND_SIZE && pool.length; i++) {
+      const idx = Math.floor(Math.random() * pool.length);
+      picked.push(pool.splice(idx, 1)[0]);
+    }
+    return picked;
+  }
+
+  function startRound() {
+    roundQuestions = pickRoundQuestions();
+    roundIndex = 0;
+    roundCorrect = 0;
+    loadQuestion();
+  }
+
+  const snoozeBtn = document.getElementById('snoozeBtn');
+  const triviaCard = document.getElementById('triviaCard');
+  const triviaQ = document.getElementById('triviaQ');
+  const triviaOptions = document.getElementById('triviaOptions');
+  const triviaProgress = document.getElementById('triviaProgress');
+  const demoStatus = document.getElementById('demoStatus');
+  const muteToggle = document.getElementById('muteToggle');
+
+  // --- Synthesized alarm sound (no audio file needed) ---
+  let audioCtx = null;
+  let alarmPlaying = false;
+  let alarmTimer = null;
+  let soundEnabled = true;
+
+  function ensureAudioCtx() {
+    if (!audioCtx) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new Ctx();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function beep(freq, duration, startTime) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.16, startTime + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.02);
+  }
+
+  function ringPattern() {
+    if (!alarmPlaying) return;
+    if (soundEnabled) {
+      const now = audioCtx.currentTime;
+      beep(1046, 0.14, now);        // classic two-tone digital alarm
+      beep(1046, 0.14, now + 0.2);
+    }
+    alarmTimer = setTimeout(ringPattern, 850);
+  }
+
+  function startAlarmSound() {
+    ensureAudioCtx();
+    alarmPlaying = true;
+    ringPattern();
+  }
+
+  function stopAlarmSound() {
+    alarmPlaying = false;
+    if (alarmTimer) clearTimeout(alarmTimer);
+  }
+
+  muteToggle.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    muteToggle.textContent = soundEnabled ? '🔊 Sound on' : '🔇 Sound off';
+    muteToggle.setAttribute('aria-pressed', String(!soundEnabled));
+    if (soundEnabled && alarmPlaying) ensureAudioCtx();
+  });
+
+  function loadQuestion() {
+    const set = roundQuestions[roundIndex];
+    triviaProgress.textContent = `Question ${roundIndex + 1} of ${ROUND_SIZE} · ${roundCorrect} correct so far`;
+    triviaQ.textContent = set.q;
+    triviaOptions.innerHTML = '';
+    demoStatus.textContent = '';
+    demoStatus.classList.remove('silenced');
+
+    set.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'trivia-opt';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => {
+        const allOpts = triviaOptions.querySelectorAll('.trivia-opt');
+        allOpts.forEach(b => b.disabled = true);
+
+        const isCorrect = i === set.correct;
+        if (isCorrect) {
+          btn.classList.add('correct');
+          roundCorrect++;
+        } else {
+          btn.classList.add('wrong');
+          const correctBtn = triviaOptions.children[set.correct];
+          if (correctBtn) correctBtn.classList.add('correct');
+        }
+
+        // Round won as soon as 2 correct answers are in — no need to ask the third
+        if (roundCorrect >= NEEDED_CORRECT) {
+          stopAlarmSound();
+          demoStatus.textContent = 'Alarm silenced. That\'s the whole app.';
+          demoStatus.classList.add('silenced');
+          setTimeout(() => {
+            triviaCard.classList.remove('open');
+            snoozeBtn.disabled = false;
+            snoozeBtn.textContent = 'Try to snooze';
+            demoStatus.textContent = '';
+            demoStatus.classList.remove('silenced');
+          }, 1400);
+          return;
+        }
+
+        roundIndex++;
+
+        if (roundIndex >= ROUND_SIZE) {
+          // Used all 3 questions without hitting 2 correct — new round, alarm keeps ringing
+          demoStatus.textContent = `Only ${roundCorrect} of ${ROUND_SIZE} right. New round.`;
+          setTimeout(() => {
+            startRound();
+          }, 1100);
+        } else {
+          demoStatus.textContent = isCorrect ? 'Correct. Next question.' : 'Wrong. The alarm keeps ringing.';
+          setTimeout(() => {
+            loadQuestion();
+          }, 1000);
+        }
+      });
+      triviaOptions.appendChild(btn);
+    });
+  }
+
+  snoozeBtn.addEventListener('click', () => {
+    if (snoozeBtn.disabled) return;
+    triviaCard.classList.add('open');
+    startRound();
+    snoozeBtn.disabled = true;
+    snoozeBtn.textContent = 'Snooze disabled';
+    startAlarmSound();
+  });
+
+  // --- Signup form (real account creation) ---
+  const interestForm = document.getElementById('interestForm');
+  const formSuccess = document.getElementById('formSuccess');
+  const formNote = document.getElementById('formNote');
+
+  interestForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const submitBtn = interestForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+
+    const payload = {
+      name: document.getElementById('name').value,
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value,
+      alarmTime: document.getElementById('alarmTime').value,
+      category: document.getElementById('category').value,
+      botField: document.getElementById('botField').value
+    };
+
+    fetch('/.netlify/functions/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Something went wrong');
+        interestForm.style.display = 'none';
+        formSuccess.classList.add('show');
+        setTimeout(() => { window.location.href = '/dashboard.html'; }, 1200);
+      })
+      .catch((err) => {
+        submitBtn.disabled = false;
+        formNote.textContent = err.message || 'Something went wrong. Please try again.';
+      });
+  });
+</script>
+
+</body>
+</html>
