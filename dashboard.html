@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your alarm — TriviaAlarm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Mono:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #14231F;
+    --surface: #1C332C;
+    --surface-raised: #233D34;
+    --brass: #C9A227;
+    --brass-bright: #E0BC4A;
+    --alarm-red: #C1443D;
+    --chalk: #EDE6D6;
+    --muted: #8FA79C;
+    --line: rgba(237, 230, 214, 0.12);
+    --font-display: 'Fraunces', serif;
+    --font-digit: 'Space Mono', monospace;
+    --font-body: 'Inter', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-deep);
+    color: var(--chalk);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+  header {
+    border-bottom: 1px solid var(--line);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--chalk);
+    text-decoration: none;
+  }
+  .logo span { color: var(--brass-bright); }
+  #logoutBtn {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    border-radius: 100px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: var(--font-body);
+  }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 56px 24px; }
+
+  #loadingState, #loggedOutState { text-align: center; color: var(--muted); padding: 60px 0; }
+  #loggedOutState a { color: var(--brass-bright); }
+
+  #dashboard { display: none; }
+  #dashboard.show { display: block; }
+
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: 1.8rem; margin: 0 0 6px; }
+  .greeting { color: var(--muted); margin: 0 0 36px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 32px;
+  }
+  .current-time {
+    font-family: var(--font-digit);
+    font-size: 2.6rem;
+    color: var(--brass-bright);
+    margin: 0 0 4px;
+  }
+  .current-cat {
+    font-size: 0.95rem;
+    color: var(--muted);
+    margin: 0 0 28px;
+  }
+  form { display: grid; gap: 16px; }
+  label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+  input, select {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.98rem;
+    color: var(--chalk);
+    background: var(--surface-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  button[type="submit"] {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.98rem;
+    color: var(--bg-deep);
+    background: var(--brass-bright);
+    border: none;
+    padding: 13px 0;
+    border-radius: 100px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .save-note { font-size: 0.85rem; color: var(--muted); text-align: center; min-height: 18px; }
+  .save-note.ok { color: #6FA97A; }
+  .save-note.err { color: var(--alarm-red); }
+</style>
+</head>
+<body>
+  <header>
+    <a href="/index.html" class="logo">Trivia<span>Alarm</span></a>
+    <button id="logoutBtn" type="button">Log out</button>
+  </header>
+
+  <div class="wrap">
+    <p id="loadingState">Loading your alarm…</p>
+
+    <div id="loggedOutState" style="display:none;">
+      <p>You're not signed in.</p>
+      <p><a href="/login.html">Log in</a> or <a href="/index.html#signup">create an account</a>.</p>
+    </div>
+
+    <div id="dashboard">
+      <h1>Your alarm</h1>
+      <p class="greeting" id="greeting"></p>
+
+      <div class="card">
+        <p class="current-time" id="currentTime">7:00 AM</p>
+        <p class="current-cat" id="currentCat">General knowledge</p>
+
+        <form id="settingsForm">
+          <div>
+            <label for="alarmTime">Wake-up time</label>
+            <input type="time" id="alarmTime" required>
+          </div>
+          <div>
+            <label for="category">Trivia category</label>
+            <select id="category">
+              <option value="general">General knowledge</option>
+              <option value="geography">Geography</option>
+              <option value="science">Science</option>
+              <option value="history">History</option>
+              <option value="pop-culture">Pop culture</option>
+              <option value="surprise">Surprise me</option>
+            </select>
+          </div>
+          <button type="submit">Save changes</button>
+          <p class="save-note" id="saveNote"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const loadingState = document.getElementById('loadingState');
+    const loggedOutState = document.getElementById('loggedOutState');
+    const dashboard = document.getElementById('dashboard');
+    const greeting = document.getElementById('greeting');
+    const currentTime = document.getElementById('currentTime');
+    const currentCat = document.getElementById('currentCat');
+    const alarmTimeInput = document.getElementById('alarmTime');
+    const categorySelect = document.getElementById('category');
+    const settingsForm = document.getElementById('settingsForm');
+    const saveNote = document.getElementById('saveNote');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const CATEGORY_LABELS = {
+      general: 'General knowledge',
+      geography: 'Geography',
+      science: 'Science',
+      history: 'History',
+      'pop-culture': 'Pop culture',
+      surprise: 'Surprise me'
+    };
+
+    function formatTime(t) {
+      const [h, m] = t.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 === 0 ? 12 : h % 12;
+      return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+    }
+
+    function render(user) {
+      loadingState.style.display = 'none';
+      dashboard.classList.add('show');
+      greeting.textContent = `Hey ${user.name}, here's what's set for tonight.`;
+      currentTime.textContent = formatTime(user.settings.alarmTime);
+      currentCat.textContent = CATEGORY_LABELS[user.settings.category] || 'General knowledge';
+      alarmTimeInput.value = user.settings.alarmTime;
+      categorySelect.value = user.settings.category;
+    }
+
+    fetch('/.netlify/functions/session')
+      .then(async (res) => {
+        if (!res.ok) throw new Error('not signed in');
+        return res.json();
+      })
+      .then(render)
+      .catch(() => {
+        loadingState.style.display = 'none';
+        loggedOutState.style.display = 'block';
+      });
+
+    settingsForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveNote.textContent = 'Saving…';
+      saveNote.className = 'save-note';
+
+      fetch('/.netlify/functions/save-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          alarmTime: alarmTimeInput.value,
+          category: categorySelect.value
+        })
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Something went wrong');
+          currentTime.textContent = formatTime(data.settings.alarmTime);
+          currentCat.textContent = CATEGORY_LABELS[data.settings.category] || 'General knowledge';
+          saveNote.textContent = 'Saved.';
+          saveNote.className = 'save-note ok';
+        })
+        .catch((err) => {
+          saveNote.textContent = err.message || 'Something went wrong.';
+          saveNote.className = 'save-note err';
+        });
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      fetch('/.netlify/functions/logout', { method: 'POST' }).then(() => {
+        window.location.href = '/index.html';
+      });
+    });
+  </script>
+</body>
+</html>
