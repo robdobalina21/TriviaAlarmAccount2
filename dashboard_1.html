@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your alarm — TriviaAlarm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Mono:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #14231F;
+    --surface: #1C332C;
+    --surface-raised: #233D34;
+    --brass: #C9A227;
+    --brass-bright: #E0BC4A;
+    --alarm-red: #C1443D;
+    --chalk: #EDE6D6;
+    --muted: #8FA79C;
+    --line: rgba(237, 230, 214, 0.12);
+    --font-display: 'Fraunces', serif;
+    --font-digit: 'Space Mono', monospace;
+    --font-body: 'Inter', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-deep);
+    color: var(--chalk);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+  header {
+    border-bottom: 1px solid var(--line);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--chalk);
+    text-decoration: none;
+  }
+  .logo span { color: var(--brass-bright); }
+  #logoutBtn {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    border-radius: 100px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: var(--font-body);
+  }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 56px 24px; }
+
+  #loadingState, #loggedOutState { text-align: center; color: var(--muted); padding: 60px 0; }
+  #loggedOutState a { color: var(--brass-bright); }
+
+  #dashboard { display: none; }
+  #dashboard.show { display: block; }
+
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: 1.8rem; margin: 0 0 6px; }
+  .greeting { color: var(--muted); margin: 0 0 36px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 32px;
+  }
+  .current-time {
+    font-family: var(--font-digit);
+    font-size: 2.6rem;
+    color: var(--brass-bright);
+    margin: 0 0 4px;
+  }
+  .current-cat {
+    font-size: 0.95rem;
+    color: var(--muted);
+    margin: 0 0 28px;
+  }
+  form { display: grid; gap: 16px; }
+  label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+  input, select {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.98rem;
+    color: var(--chalk);
+    background: var(--surface-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  button[type="submit"] {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.98rem;
+    color: var(--bg-deep);
+    background: var(--brass-bright);
+    border: none;
+    padding: 13px 0;
+    border-radius: 100px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .save-note { font-size: 0.85rem; color: var(--muted); text-align: center; min-height: 18px; }
+  .save-note.ok { color: #6FA97A; }
+  .save-note.err { color: var(--alarm-red); }
+
+  .live-card {
+    margin-bottom: 24px;
+  }
+  .live-clock {
+    font-family: var(--font-digit);
+    font-size: 3rem;
+    color: var(--chalk);
+    margin: 0 0 4px;
+  }
+  .live-sub {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin: 0 0 20px;
+  }
+  .live-sub strong { color: var(--brass-bright); font-weight: 600; }
+  .test-btn {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    border-radius: 100px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: var(--font-body);
+  }
+  .test-btn:hover { border-color: var(--brass); }
+
+  .live-trivia { display: none; margin-top: 22px; border-top: 1px solid var(--line); padding-top: 22px; }
+  .live-trivia.open { display: block; }
+  .live-trivia-progress {
+    font-family: var(--font-digit);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin: 0 0 10px;
+  }
+  .live-trivia-q { font-size: 1rem; font-weight: 500; margin: 0 0 14px; }
+  .live-trivia-options { display: grid; gap: 8px; }
+  .live-trivia-opt {
+    text-align: left;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    padding: 11px 14px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--surface-raised);
+    color: var(--chalk);
+    cursor: pointer;
+  }
+  .live-trivia-opt:hover { border-color: var(--brass); }
+  .live-trivia-opt.correct { border-color: #6FA97A; background: rgba(111,169,122,0.15); }
+  .live-trivia-opt.wrong { border-color: var(--alarm-red); background: rgba(193,68,61,0.15); }
+  .live-status { margin-top: 12px; font-family: var(--font-digit); font-size: 0.8rem; color: var(--muted); min-height: 18px; }
+  .live-status.silenced { color: #6FA97A; }
+</style>
+</head>
+<body>
+  <header>
+    <a href="/index.html" class="logo">Trivia<span>Alarm</span></a>
+    <button id="logoutBtn" type="button">Log out</button>
+  </header>
+
+  <div class="wrap">
+    <p id="loadingState">Loading your alarm…</p>
+
+    <div id="loggedOutState" style="display:none;">
+      <p>You're not signed in.</p>
+      <p><a href="/login.html">Log in</a> or <a href="/index.html#signup">create an account</a>.</p>
+    </div>
+
+    <div id="dashboard">
+      <h1>Your alarm</h1>
+      <p class="greeting" id="greeting"></p>
+
+      <div class="card live-card">
+        <p class="live-clock" id="liveClock">--:--:--</p>
+        <p class="live-sub" id="liveSub">Next alarm: <strong id="nextAlarmLabel">--</strong></p>
+        <button class="test-btn" id="testAlarmBtn" type="button">Test alarm now</button>
+
+        <div class="live-trivia" id="liveTrivia">
+          <p class="live-trivia-progress" id="liveProgress">Question 1 of 3</p>
+          <p class="live-trivia-q" id="liveQ"></p>
+          <div class="live-trivia-options" id="liveOptions"></div>
+          <p class="live-status" id="liveStatus"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="current-time" id="currentTime">7:00 AM</p>
+        <p class="current-cat" id="currentCat">General knowledge</p>
+
+        <form id="settingsForm">
+          <div>
+            <label for="alarmTime">Wake-up time</label>
+            <input type="time" id="alarmTime" required>
+          </div>
+          <div>
+            <label for="category">Trivia category</label>
+            <select id="category">
+              <option value="general">General knowledge</option>
+              <option value="geography">Geography</option>
+              <option value="science">Science</option>
+              <option value="history">History</option>
+              <option value="pop-culture">Pop culture</option>
+              <option value="surprise">Surprise me</option>
+            </select>
+          </div>
+          <button type="submit">Save changes</button>
+          <p class="save-note" id="saveNote"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const loadingState = document.getElementById('loadingState');
+    const loggedOutState = document.getElementById('loggedOutState');
+    const dashboard = document.getElementById('dashboard');
+    const greeting = document.getElementById('greeting');
+    const currentTime = document.getElementById('currentTime');
+    const currentCat = document.getElementById('currentCat');
+    const alarmTimeInput = document.getElementById('alarmTime');
+    const categorySelect = document.getElementById('category');
+    const settingsForm = document.getElementById('settingsForm');
+    const saveNote = document.getElementById('saveNote');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const CATEGORY_LABELS = {
+      general: 'General knowledge',
+      geography: 'Geography',
+      science: 'Science',
+      history: 'History',
+      'pop-culture': 'Pop culture',
+      surprise: 'Surprise me'
+    };
+
+    function formatTime(t) {
+      const [h, m] = t.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 === 0 ? 12 : h % 12;
+      return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+    }
+
+    function render(user) {
+      loadingState.style.display = 'none';
+      dashboard.classList.add('show');
+      greeting.textContent = `Hey ${user.name}, here's what's set for tonight.`;
+      currentTime.textContent = formatTime(user.settings.alarmTime);
+      currentCat.textContent = CATEGORY_LABELS[user.settings.category] || 'General knowledge';
+      alarmTimeInput.value = user.settings.alarmTime;
+      categorySelect.value = user.settings.category;
+      userSettings = user.settings;
+      nextAlarmLabel.textContent = `${formatTime(user.settings.alarmTime)} · ${CATEGORY_LABELS[user.settings.category] || 'General knowledge'}`;
+    }
+
+    fetch('/.netlify/functions/session')
+      .then(async (res) => {
+        if (!res.ok) throw new Error('not signed in');
+        return res.json();
+      })
+      .then(render)
+      .catch(() => {
+        loadingState.style.display = 'none';
+        loggedOutState.style.display = 'block';
+      });
+
+    settingsForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveNote.textContent = 'Saving…';
+      saveNote.className = 'save-note';
+
+      fetch('/.netlify/functions/save-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          alarmTime: alarmTimeInput.value,
+          category: categorySelect.value
+        })
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Something went wrong');
+          currentTime.textContent = formatTime(data.settings.alarmTime);
+          currentCat.textContent = CATEGORY_LABELS[data.settings.category] || 'General knowledge';
+          userSettings = data.settings;
+          nextAlarmLabel.textContent = `${formatTime(data.settings.alarmTime)} · ${CATEGORY_LABELS[data.settings.category] || 'General knowledge'}`;
+          saveNote.textContent = 'Saved.';
+          saveNote.className = 'save-note ok';
+        })
+        .catch((err) => {
+          saveNote.textContent = err.message || 'Something went wrong.';
+          saveNote.className = 'save-note err';
+        });
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      fetch('/.netlify/functions/logout', { method: 'POST' }).then(() => {
+        window.location.href = '/index.html';
+      });
+    });
+
+    // --- Live alarm: real clock + trivia trigger ---
+    const questions = [
+      { q: "What's the largest planet in our solar system?", options: ["Saturn", "Jupiter", "Neptune"], correct: 1 },
+      { q: "Which ocean is the largest?", options: ["Atlantic", "Indian", "Pacific"], correct: 2 },
+      { q: "In what year did the first iPhone launch?", options: ["2005", "2007", "2009"], correct: 1 },
+      { q: "What's the capital of France?", options: ["Lyon", "Marseille", "Paris"], correct: 2 },
+      { q: "How many continents are there?", options: ["5", "7", "6"], correct: 1 },
+      { q: "What's the fastest land animal?", options: ["Lion", "Cheetah", "Gazelle"], correct: 1 },
+      { q: "How many bones does an adult human have?", options: ["186", "206", "226"], correct: 1 },
+      { q: "Who wrote \"Romeo and Juliet\"?", options: ["Dickens", "Hemingway", "Shakespeare"], correct: 2 },
+      { q: "What currency is used in Japan?", options: ["Won", "Yen", "Yuan"], correct: 1 },
+      { q: "What's the smallest prime number?", options: ["1", "2", "3"], correct: 1 },
+      { q: "At what temperature does water freeze (Celsius)?", options: ["0°", "10°", "-10°"], correct: 0 },
+      { q: "Who was the first person to walk on the moon?", options: ["Buzz Aldrin", "Yuri Gagarin", "Neil Armstrong"], correct: 2 },
+      { q: "What's the capital of Italy?", options: ["Milan", "Rome", "Venice"], correct: 1 },
+      { q: "How many strings does a standard violin have?", options: ["6", "5", "4"], correct: 2 },
+      { q: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Mercury"], correct: 1 },
+      { q: "What's the capital of Mongolia?", options: ["Ulaanbaatar", "Astana", "Bishkek"], correct: 0 },
+      { q: "What's the chemical symbol for tungsten?", options: ["Tu", "W", "Wf"], correct: 1 },
+      { q: "Who wrote \"One Hundred Years of Solitude\"?", options: ["Jorge Luis Borges", "Pablo Neruda", "Gabriel García Márquez"], correct: 2 },
+      { q: "What's the smallest bone in the human body?", options: ["Malleus", "Incus", "Stapes"], correct: 2 },
+      { q: "What year did the Berlin Wall fall?", options: ["1987", "1989", "1991"], correct: 1 },
+      { q: "What's the longest river in the world?", options: ["Amazon", "Nile", "Yangtze"], correct: 1 },
+      { q: "Which element has the atomic number 79?", options: ["Silver", "Platinum", "Gold"], correct: 2 },
+      { q: "How many bones are in the human hand?", options: ["25", "27", "32"], correct: 1 },
+      { q: "Which country has the most time zones?", options: ["Russia", "USA", "France"], correct: 2 },
+      { q: "What's the deepest oceanic trench?", options: ["Puerto Rico Trench", "Mariana Trench", "Java Trench"], correct: 1 },
+      { q: "Which element is first on the periodic table?", options: ["Helium", "Hydrogen", "Lithium"], correct: 1 },
+      { q: "Who painted the Mona Lisa?", options: ["Michelangelo", "Raphael", "Leonardo da Vinci"], correct: 2 },
+      { q: "Which country gifted the Statue of Liberty to the US?", options: ["United Kingdom", "France", "Spain"], correct: 1 },
+      { q: "What's the largest desert in the world by area?", options: ["Sahara", "Gobi", "Antarctica"], correct: 2 },
+      { q: "What was Germany's currency before the Euro?", options: ["Franc", "Deutsche Mark", "Lira"], correct: 1 },
+      { q: "What year did World War II end?", options: ["1943", "1945", "1947"], correct: 1 },
+      { q: "Who is credited with inventing the telephone?", options: ["Thomas Edison", "Nikola Tesla", "Alexander Graham Bell"], correct: 2 },
+      { q: "What's the largest mammal on Earth?", options: ["African elephant", "Blue whale", "Giraffe"], correct: 1 },
+      { q: "What's the capital of Australia?", options: ["Sydney", "Melbourne", "Canberra"], correct: 2 },
+      { q: "Which planet has the most moons?", options: ["Jupiter", "Saturn", "Neptune"], correct: 1 },
+      { q: "What's the only mammal capable of true flight?", options: ["Flying squirrel", "Sugar glider", "Bat"], correct: 2 },
+      { q: "Half-life is a measurement used to describe what?", options: ["Radioactive decay", "Chemical bonding", "Magnetic fields"], correct: 0 },
+      { q: "In which country is the ancient city of Petra located?", options: ["Egypt", "Syria", "Jordan"], correct: 2 },
+      { q: "Who wrote \"Crime and Punishment\"?", options: ["Leo Tolstoy", "Anton Chekhov", "Fyodor Dostoevsky"], correct: 2 },
+      { q: "What's the hardest naturally occurring substance on Earth?", options: ["Quartz", "Titanium", "Diamond"], correct: 2 },
+      { q: "Who is considered the first computer programmer?", options: ["Alan Turing", "Charles Babbage", "Ada Lovelace"], correct: 2 },
+      { q: "What's the capital of Kazakhstan?", options: ["Almaty", "Astana", "Bishkek"], correct: 1 },
+      { q: "What's the official currency of Brazil?", options: ["Peso", "Real", "Boliviano"], correct: 1 },
+      { q: "What's the chemical symbol for antimony?", options: ["An", "Ab", "Sb"], correct: 2 },
+      { q: "In what year was the Magna Carta signed?", options: ["1189", "1215", "1315"], correct: 1 },
+      { q: "Who composed \"The Four Seasons\"?", options: ["Johann Sebastian Bach", "Antonio Vivaldi", "Wolfgang Amadeus Mozart"], correct: 1 },
+      { q: "Which country has the only non-rectangular national flag?", options: ["Bhutan", "Switzerland", "Nepal"], correct: 2 },
+      { q: "What's the smallest country in the world by area?", options: ["Monaco", "San Marino", "Vatican City"], correct: 2 },
+      { q: "Who was the longest-reigning British monarch before Elizabeth II?", options: ["George III", "Henry VIII", "Queen Victoria"], correct: 2 },
+      { q: "How many moons does Mars have?", options: ["1", "2", "4"], correct: 1 }
+    ];
+
+    const ROUND_SIZE = 3;
+    const NEEDED_CORRECT = 2;
+    let roundQuestions = [];
+    let roundIndex = 0;
+    let roundCorrect = 0;
+    let alarmActive = false;
+    let firedForMinute = null;
+    let userSettings = null;
+
+    const liveClock = document.getElementById('liveClock');
+    const nextAlarmLabel = document.getElementById('nextAlarmLabel');
+    const testAlarmBtn = document.getElementById('testAlarmBtn');
+    const liveTrivia = document.getElementById('liveTrivia');
+    const liveProgress = document.getElementById('liveProgress');
+    const liveQ = document.getElementById('liveQ');
+    const liveOptions = document.getElementById('liveOptions');
+    const liveStatus = document.getElementById('liveStatus');
+
+    // Synthesized alarm sound (Web Audio API — no audio file needed)
+    let audioCtx = null;
+    let alarmPlaying = false;
+    let alarmTimer = null;
+
+    function ensureAudioCtx() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new Ctx();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    function beep(freq, duration, startTime) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.16, startTime + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.02);
+    }
+    function ringPattern() {
+      if (!alarmPlaying) return;
+      const now = audioCtx.currentTime;
+      beep(1046, 0.14, now);
+      beep(1046, 0.14, now + 0.2);
+      alarmTimer = setTimeout(ringPattern, 850);
+    }
+    function startAlarmSound() { ensureAudioCtx(); alarmPlaying = true; ringPattern(); }
+    function stopAlarmSound() { alarmPlaying = false; if (alarmTimer) clearTimeout(alarmTimer); }
+
+    function pickRoundQuestions() {
+      const pool = [...questions];
+      const picked = [];
+      for (let i = 0; i < ROUND_SIZE && pool.length; i++) {
+        const idx = Math.floor(Math.random() * pool.length);
+        picked.push(pool.splice(idx, 1)[0]);
+      }
+      return picked;
+    }
+
+    function startRound() {
+      roundQuestions = pickRoundQuestions();
+      roundIndex = 0;
+      roundCorrect = 0;
+      loadLiveQuestion();
+    }
+
+    function loadLiveQuestion() {
+      const set = roundQuestions[roundIndex];
+      liveProgress.textContent = `Question ${roundIndex + 1} of ${ROUND_SIZE} · ${roundCorrect} correct so far`;
+      liveQ.textContent = set.q;
+      liveOptions.innerHTML = '';
+      liveStatus.textContent = '';
+      liveStatus.classList.remove('silenced');
+
+      set.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'live-trivia-opt';
+        btn.textContent = opt;
+        btn.addEventListener('click', () => {
+          const allOpts = liveOptions.querySelectorAll('.live-trivia-opt');
+          allOpts.forEach(b => b.disabled = true);
+
+          const isCorrect = i === set.correct;
+          if (isCorrect) {
+            btn.classList.add('correct');
+            roundCorrect++;
+          } else {
+            btn.classList.add('wrong');
+            const correctBtn = liveOptions.children[set.correct];
+            if (correctBtn) correctBtn.classList.add('correct');
+          }
+
+          if (roundCorrect >= NEEDED_CORRECT) {
+            stopAlarmSound();
+            liveStatus.textContent = 'Alarm silenced. Good morning.';
+            liveStatus.classList.add('silenced');
+            setTimeout(() => {
+              liveTrivia.classList.remove('open');
+              alarmActive = false;
+            }, 1600);
+            return;
+          }
+
+          roundIndex++;
+          if (roundIndex >= ROUND_SIZE) {
+            liveStatus.textContent = `Only ${roundCorrect} of ${ROUND_SIZE} right. New round.`;
+            setTimeout(() => { startRound(); }, 1100);
+          } else {
+            liveStatus.textContent = isCorrect ? 'Correct. Next question.' : 'Wrong. The alarm keeps ringing.';
+            setTimeout(() => { loadLiveQuestion(); }, 1000);
+          }
+        });
+        liveOptions.appendChild(btn);
+      });
+    }
+
+    function fireAlarm() {
+      if (alarmActive) return;
+      alarmActive = true;
+      liveTrivia.classList.add('open');
+      startAlarmSound();
+      startRound();
+    }
+
+    function tickClock() {
+      const now = new Date();
+      const hh24 = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      const nowKey = `${hh24}:${mm}`;
+
+      liveClock.textContent = formatClock(now);
+
+      if (userSettings && nowKey === userSettings.alarmTime) {
+        if (firedForMinute !== nowKey) {
+          firedForMinute = nowKey;
+          fireAlarm();
+        }
+      } else {
+        firedForMinute = null;
+      }
+    }
+
+    function formatClock(d) {
+      let h = d.getHours();
+      const m = String(d.getMinutes()).padStart(2, '0');
+      const s = String(d.getSeconds()).padStart(2, '0');
+      const period = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 === 0 ? 12 : h % 12;
+      return `${h}:${m}:${s} ${period}`;
+    }
+
+    testAlarmBtn.addEventListener('click', () => {
+      firedForMinute = null;
+      fireAlarm();
+    });
+
+    setInterval(tickClock, 1000);
+    tickClock();
+  </script>
+</body>
+</html>
