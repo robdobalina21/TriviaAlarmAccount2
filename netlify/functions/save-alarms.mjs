@@ -29,13 +29,18 @@ export default async (req) => {
     return json({ error: `You can have up to ${MAX_ALARMS} alarms` }, 400);
   }
 
-  const alarms = incoming.map((a) => ({
-    id: (a.id && typeof a.id === 'string') ? a.id.slice(0, 40) : makeId(),
-    time: /^\d{2}:\d{2}$/.test(a.time) ? a.time : '07:00',
-    category: CATEGORIES.includes(a.category) ? a.category : 'general',
-    label: (a.label || '').toString().trim().slice(0, 40),
-    enabled: a.enabled !== false
-  }));
+  const alarms = incoming.map((a) => {
+    const rawCount = Number(a.questionCount);
+    const questionCount = Number.isInteger(rawCount) && rawCount >= 1 && rawCount <= 10 ? rawCount : 3;
+    return {
+      id: (a.id && typeof a.id === 'string') ? a.id.slice(0, 40) : makeId(),
+      time: /^\d{2}:\d{2}$/.test(a.time) ? a.time : '07:00',
+      category: CATEGORIES.includes(a.category) ? a.category : 'general',
+      label: (a.label || '').toString().trim().slice(0, 40),
+      enabled: a.enabled !== false,
+      questionCount
+    };
+  });
 
   const store = getStore('users');
   const user = await store.get(payload.email, { type: 'json' });
