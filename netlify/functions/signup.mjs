@@ -48,7 +48,8 @@ export default async (req) => {
     email,
     passwordHash: hashPassword(password),
     createdAt: new Date().toISOString(),
-    alarms: [{ id: makeId(), time: alarmTime, category, label: '', enabled: true }]
+    alarms: [{ id: makeId(), time: alarmTime, category, label: '', enabled: true, questionCount: 3 }],
+    customQuestions: []
   };
   await store.setJSON(email, user);
 
