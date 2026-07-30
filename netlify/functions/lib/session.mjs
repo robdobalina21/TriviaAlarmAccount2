@@ -76,4 +76,4 @@ export function json(obj, status = 200, extraHeaders = {}) {
 }
 
 export const SESSION_LIFETIME_MS = SESSION_MAX_AGE * 1000;
-export const CATEGORIES = ['general', 'geography', 'science', 'history', 'pop-culture', 'surprise'];
+export const CATEGORIES = ['general', 'geography', 'science', 'history', 'pop-culture', 'surprise', 'custom'];
