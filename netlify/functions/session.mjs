@@ -13,5 +13,10 @@ export default async (req) => {
   const user = await store.get(payload.email, { type: 'json' });
   if (!user) return json({ error: 'Not signed in' }, 401);
 
-  return json({ name: user.name, email: user.email, alarms: user.alarms || [] });
+  return json({
+    name: user.name,
+    email: user.email,
+    alarms: user.alarms || [],
+    customQuestions: user.customQuestions || []
+  });
 };
